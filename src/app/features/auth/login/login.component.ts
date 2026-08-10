@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { InputText } from 'primeng/inputtext';
 import { Password } from 'primeng/password';
 import { Button } from 'primeng/button';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -36,7 +37,7 @@ export class LoginComponent {
     this.loading = true;
     this.errorMessage = '';
 
-    this.http.post<any>('http://localhost:3000/auth/login', this.form.value).subscribe({
+    this.http.post<any>(`${environment.apiUrl}/auth/login`, this.form.value).subscribe({
       next: (response) => {
         this.loading = false;
         // Guardar token en localStorage
