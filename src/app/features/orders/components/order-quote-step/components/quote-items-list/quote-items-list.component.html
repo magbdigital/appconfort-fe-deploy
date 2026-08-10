@@ -11,6 +11,7 @@
             <tr>
                 <th>Producto</th>
                 <th class="text-right" style="text-align: right;">Cant</th>
+                <th class="text-right" style="text-align: right;">P. Unit</th>
                 <th class="text-right" style="text-align: right;">Subtotal</th>
                 <th style="width: 3rem;"></th>
             </tr>
@@ -19,7 +20,8 @@
             <tr>
                 <td>{{ item.product.name }}</td>
                 <td class="text-right" style="text-align: right;">{{ item.quantity }}</td>
-                <td class="text-right" style="text-align: right;">${{ item.subtotal }}</td>
+                <td class="text-right" style="text-align: right;">${{ item.unitPrice | number:'1.2-2' }}</td>
+                <td class="text-right" style="text-align: right;">${{ item.subtotal | number:'1.2-2' }}</td>
                 <td>
                     <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
                         (onClick)="removeItem(item.id)"></p-button>
@@ -28,10 +30,32 @@
         </ng-template>
     </p-table>
 
-    <!-- Total -->
-    <div class="total-row">
-        <span class="total-label">Total</span>
-        <span class="total-value">USD {{ getTotal() }}</span>
+    <!-- Totals Breakdown -->
+    <div class="totals-breakdown" style="margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-end;">
+        <div style="display: flex; justify-content: space-between; width: 220px;">
+            <span style="color: #64748b; font-size: 0.9rem;">Subtotal:</span>
+            <span style="font-weight: 500; font-size: 0.9rem;">USD {{ getTotal() | number:'1.2-2' }}</span>
+        </div>
+        
+        @if (getDiscountAmount() > 0) {
+        <div style="display: flex; justify-content: space-between; width: 220px; color: #dc2626;">
+            <span style="font-size: 0.9rem;">Descuento ({{ discountPercent() }}%):</span>
+            <span style="font-weight: 500; font-size: 0.9rem;">-USD {{ getDiscountAmount() | number:'1.2-2' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; width: 220px;">
+            <span style="color: #64748b; font-size: 0.9rem;">Subtotal c/Desc:</span>
+            <span style="font-weight: 500; font-size: 0.9rem;">USD {{ getSubtotalWithDiscount() | number:'1.2-2' }}</span>
+        </div>
+        }
+
+        <div style="display: flex; justify-content: space-between; width: 220px;">
+            <span style="color: #64748b; font-size: 0.9rem;">IVA (15%):</span>
+            <span style="font-weight: 500; font-size: 0.9rem;">USD {{ getIva() | number:'1.2-2' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; width: 220px; margin-top: 0.25rem; border-top: 1px solid #cbd5e1; padding-top: 0.25rem;">
+            <span style="font-weight: bold; font-size: 1.05rem; color: #1e293b;">Total a Pagar:</span>
+            <span style="font-weight: bold; font-size: 1.05rem; color: #0284c7;">USD {{ getFinalTotal() | number:'1.2-2' }}</span>
+        </div>
     </div>
     }
 

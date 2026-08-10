@@ -13,6 +13,8 @@ interface QuoteItem {
     product: {
         name: string;
         sku: string;
+        finalPrice: number;
+        basePrice: number;
     };
 }
 
@@ -27,6 +29,7 @@ export class QuoteItemsListComponent implements OnInit {
     private quoteService = inject(QuoteService);
 
     quoteId = input.required<number>(); // ← receives quoteId from parent
+    discountPercent = input<string>('0'); // ← receives discountPercent from parent
 
     items = signal<QuoteItem[]>([]);
     loading = signal(false);
@@ -50,6 +53,24 @@ export class QuoteItemsListComponent implements OnInit {
         return this.items().reduce((acc, item) =>
             acc + parseFloat(item.subtotal), 0
         );
+    }
+
+    getDiscountAmount(): number {
+        const subtotal = this.getTotal();
+        const discPercent = parseFloat(this.discountPercent() || '0');
+        return subtotal * (discPercent / 100);
+    }
+
+    getSubtotalWithDiscount(): number {
+        return this.getTotal() - this.getDiscountAmount();
+    }
+
+    getIva(): number {
+        return this.getSubtotalWithDiscount() * 0.15;
+    }
+
+    getFinalTotal(): number {
+        return this.getSubtotalWithDiscount() * 1.15;
     }
 
     removeItem(itemId: number): void {

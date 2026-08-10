@@ -47,11 +47,11 @@ export class SetPickerComponent implements OnInit {
 
         // Map items to quote insertion requests
         const addRequests = set.setItems.map(item => {
-            const finalPrice = Number(item.product?.finalPrice) || 0;
+            const basePrice = Number(item.product?.basePrice) || 0;
             return this.quoteService.addItem(this.quoteId(), {
                 productId: item.productId,
                 quantity: item.quantity * setQty,
-                unitPrice: finalPrice
+                unitPrice: basePrice
             });
         });
 

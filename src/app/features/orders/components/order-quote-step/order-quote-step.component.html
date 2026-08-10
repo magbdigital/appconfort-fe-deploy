@@ -3,13 +3,15 @@
     @if (quote()) {
     <div class="quote-builder-layout">
         <div class="picker-panel" style="display: flex; justify-content: flex-end; width: 100%; gap: 0.5rem;">
+            <p-splitButton label="Descuento ({{ quote()?.discountPercent || '0' }}%)" icon="pi pi-percentage" 
+                [model]="discountItems" size="small" severity="secondary" [outlined]="true"></p-splitButton>
             <p-button label="Seleccionar Juego" icon="pi pi-th-large" (onClick)="openSetSearch()"
                 size="small" [outlined]="true"></p-button>
             <p-button label="Seleccionar Productos" icon="pi pi-plus" (onClick)="openProductSearch()"
                 size="small"></p-button>
         </div>
         <div class="items-list-panel">
-            <app-quote-items-list #quoteItemsList [quoteId]="quote()!.id"></app-quote-items-list>
+            <app-quote-items-list #quoteItemsList [quoteId]="quote()!.id" [discountPercent]="quote()?.discountPercent || '0'"></app-quote-items-list>
         </div>
     </div>
     } @else {

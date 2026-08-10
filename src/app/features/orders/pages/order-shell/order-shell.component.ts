@@ -2,6 +2,8 @@ import { Component, inject, signal, OnInit, computed, viewChild } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { jsPDF } from 'jspdf';
 import { Steps } from 'primeng/steps';
 import { Card } from 'primeng/card';
 import { Button } from 'primeng/button';
@@ -123,15 +125,7 @@ export class OrderShellComponent implements OnInit {
       label: 'Enviar',
       icon: 'pi pi-send',
       command: () => {
-        window.open('https://api.whatsapp.com/send?phone=593988963746', '_blank');
-        this.quoteStatus.set('SENT');
-        const id = this.quoteId();
-        if (id) {
-          this.quoteService.updateStatus(id, 'SENT').subscribe({
-            next: (updatedQuote) => console.log('Status updated to SENT:', updatedQuote),
-            error: (err) => console.error('Error updating status to SENT:', err)
-          });
-        }
+        this.sendQuote();
       }
     },
     {
@@ -307,4 +301,187 @@ export class OrderShellComponent implements OnInit {
     this.salesOrderStatus.set(salesOrder?.status || null);
     this.salesOrderId.set(salesOrder?.id || null);
   }
+
+  generateProformaPdf(quoteId: number, client: Client, items: any[], discountPercent: number): Blob {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(41, 128, 185);
+    doc.text('APP CONFORT', 20, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(127, 140, 141);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Soluciones de Confort y Muebles para tu hogar', 20, 26);
+    doc.text('Teléfono: +593 98 896 3746', 20, 31);
+    doc.text('Ecuador', 20, 36);
+
+    // Divider line
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 42, 190, 42);
+
+    // Proforma Details
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(44, 62, 80);
+    doc.text(`PROFORMA #${quoteId}`, 20, 52);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 140, 52);
+
+    // Client Section
+    doc.setFont('helvetica', 'bold');
+    doc.text('CLIENTE:', 20, 65);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Nombre: ${client.firstName} ${client.lastName}`, 20, 71);
+    doc.text(`C.I. / NUI: ${client.nui}`, 20, 76);
+    if (client.mobile) {
+      doc.text(`Teléfono: ${client.mobile}`, 20, 81);
+    }
+    if (client.email) {
+      doc.text(`Email: ${client.email}`, 20, 86);
+    }
+
+    // Table Header
+    doc.setFillColor(41, 128, 185);
+    doc.rect(20, 95, 170, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Descripción del Producto', 23, 100);
+    doc.text('Cant.', 120, 100);
+    doc.text('P. Unit', 140, 100);
+    doc.text('Subtotal', 165, 100);
+
+    // Table Body
+    doc.setTextColor(44, 62, 80);
+    doc.setFont('helvetica', 'normal');
+    let yPos = 110;
+    items.forEach((item) => {
+      doc.text(item.product.name, 23, yPos);
+      doc.text(item.quantity.toString(), 122, yPos);
+      const unitPrice = Number(item.unitPrice || (item.subtotal / item.quantity));
+      doc.text(`$${unitPrice.toFixed(2)}`, 140, yPos);
+      doc.text(`$${Number(item.subtotal).toFixed(2)}`, 165, yPos);
+
+      doc.setDrawColor(240, 240, 240);
+      doc.line(20, yPos + 3, 190, yPos + 3);
+      yPos += 10;
+    });
+
+    // Totals
+    const subtotalVal = items.reduce((acc, item) => acc + parseFloat(item.subtotal), 0);
+    const discountAmount = subtotalVal * (discountPercent / 100);
+    const subtotalWithDiscount = subtotalVal - discountAmount;
+    const ivaVal = subtotalWithDiscount * 0.15;
+    const finalTotalVal = subtotalWithDiscount + ivaVal;
+
+    yPos += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.text('Subtotal:', 120, yPos);
+    doc.text(`USD ${subtotalVal.toFixed(2)}`, 165, yPos);
+
+    if (discountPercent > 0) {
+      yPos += 7;
+      doc.setTextColor(220, 53, 69);
+      doc.text(`Descuento (${discountPercent}%):`, 120, yPos);
+      doc.text(`-USD ${discountAmount.toFixed(2)}`, 165, yPos);
+      doc.setTextColor(44, 62, 80);
+
+      yPos += 7;
+      doc.text('Subtotal c/Desc:', 120, yPos);
+      doc.text(`USD ${subtotalWithDiscount.toFixed(2)}`, 165, yPos);
+    }
+
+    yPos += 7;
+    doc.text('IVA (15%):', 120, yPos);
+    doc.text(`USD ${ivaVal.toFixed(2)}`, 165, yPos);
+
+    yPos += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total a Pagar:', 120, yPos);
+    doc.text(`USD ${finalTotalVal.toFixed(2)}`, 165, yPos);
+
+    // Footer
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(180, 180, 180);
+    doc.text('Gracias por su confianza.', 20, 275);
+    doc.text('Documento digital no válido como factura.', 130, 275);
+
+    return doc.output('blob');
+  }
+
+  sendQuote(): void {
+    const id = this.quoteId();
+    const client = this.selectedClient();
+    if (!id || !client) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Error',
+        detail: 'Debe seleccionar un cliente y tener una cotización activa.'
+      });
+      return;
+    }
+
+    // Load both latest quote details and items
+    forkJoin({
+      quote: this.quoteService.getById(id),
+      items: this.quoteService.getItems(id)
+    }).subscribe({
+      next: ({ quote, items }) => {
+        if (!items || items.length === 0) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Sin items',
+            detail: 'La proforma debe tener al menos un producto para poder ser enviada.'
+          });
+          return;
+        }
+
+        const discountPercent = parseFloat(quote.discountPercent || '0');
+        const subtotal = items.reduce((acc, item) => acc + parseFloat(item.subtotal), 0);
+        const discountAmount = subtotal * (discountPercent / 100);
+        const finalTotal = (subtotal - discountAmount) * 1.15;
+
+        const pdfBlob = this.generateProformaPdf(id, client, items, discountPercent);
+
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Generando PDF',
+          detail: 'Subiendo la proforma e iniciando WhatsApp...'
+        });
+
+        this.quoteService.uploadPdf(id, pdfBlob).subscribe({
+          next: ({ pdfUrl }) => {
+            this.quoteStatus.set('SENT');
+            this.quoteService.updateStatus(id, 'SENT').subscribe({
+              next: () => {
+                const phone = client.mobile ? client.mobile.replace(/\D/g, '') : '593982753690';
+                const message = encodeURIComponent(
+                  `Hola ${client.firstName} ${client.lastName}, te compartimos la proforma de tu cotización por un valor total de USD ${finalTotal.toFixed(2)} (IVA incl.) en el siguiente enlace: ${pdfUrl}`
+                );
+
+                const urlWhatsApp = `https://api.whatsapp.com/send?phone=${phone}&text=${message}`;
+                window.open(urlWhatsApp, '_blank');
+              },
+              error: (err) => console.error('Error updating status to SENT:', err)
+            });
+          },
+          error: (err) => {
+            console.error('Error al subir PDF:', err);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'No se pudo generar o subir el PDF de la proforma.'
+            });
+          }
+        });
+      },
+      error: (err) => console.error('Error al obtener items para PDF:', err)
+    });
+  }
 }
+

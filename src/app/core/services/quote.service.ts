@@ -34,4 +34,14 @@ export class QuoteService {
     updateStatus(id: number, status: string): Observable<Quote> {
         return this.http.patch<Quote>(`${this.baseUrl}/${id}/status`, { status });
     }
-}
+
+    update(id: number, payload: any): Observable<Quote> {
+        return this.http.put<Quote>(`${this.baseUrl}/${id}`, payload);
+    }
+
+    uploadPdf(id: number, file: Blob): Observable<{ pdfUrl: string }> {
+        const formData = new FormData();
+        formData.append('file', file, `proforma-${id}.pdf`);
+        return this.http.post<{ pdfUrl: string }>(`${this.baseUrl}/${id}/upload-pdf`, formData);
+    }
+}

@@ -32,7 +32,7 @@ export class ProductFormComponent implements OnInit {
         'LIVING_ROOM', 'DINING_ROOM', 'BEDROOM', 'OFFICE', 'OUTDOOR', 'OTHER'
     ];
 
-    tasasIva: number[] = [0, 5, 15, 19];
+    tasasIva: number[] = [15];
 
     formData: CreateProductDto = {
         sku: '',
@@ -97,8 +97,8 @@ export class ProductFormComponent implements OnInit {
                 basePrice: this.producto.basePrice,
                 finalPrice: this.producto.finalPrice,
                 isActive: this.producto.isActive,
-                imageUrl: this.producto.imageUrl 
-                    ? (this.producto.imageUrl.startsWith('http') ? this.producto.imageUrl : `${environment.apiUrl}${this.producto.imageUrl}`) 
+                imageUrl: this.producto.imageUrl
+                    ? (this.producto.imageUrl.startsWith('http') ? this.producto.imageUrl : `${environment.apiUrl}${this.producto.imageUrl}`)
                     : undefined
             };
         }
@@ -171,16 +171,16 @@ export class ProductFormComponent implements OnInit {
         const labor = Number(this.formData.laborCost) || 0;
         const overhead = Number(this.formData.overheadCost) || 0;
         const tax = Number(this.formData.taxRate) || 0;
-        
+
         const subtotal = material + labor + overhead;
         if (subtotal === 0) return;
 
         const currentFinalPrice = this.formData.finalPrice;
         const targetFinalPrice = Math.round(currentFinalPrice / 10) * 10;
-        
+
         const factor = 1 + tax / 100;
         const newMargin = ((targetFinalPrice / (subtotal * factor)) - 1) * 100;
-        
+
         this.formData.profitMargin = Math.round((newMargin + Number.EPSILON) * 100) / 100;
         this.formData.basePrice = Math.round((targetFinalPrice / factor + Number.EPSILON) * 100) / 100;
         this.formData.finalPrice = targetFinalPrice;

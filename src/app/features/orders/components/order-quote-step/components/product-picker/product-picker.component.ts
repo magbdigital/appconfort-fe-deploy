@@ -53,7 +53,7 @@ export class ProductPickerComponent implements OnInit {
         this.quoteService.addItem(this.quoteId(), {
             productId: product.id,
             quantity: this.getQuantity(product.id),
-            unitPrice: product.finalPrice
+            unitPrice: product.basePrice
         }).subscribe({
             next: () => this.productAdded.emit(),
             error: (err) => console.error('Error adding item:', err)

@@ -15,6 +15,8 @@ import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { Card } from 'primeng/card';
 import { Dialog } from 'primeng/dialog';
+import { SplitButton } from 'primeng/splitbutton';
+import { MenuItem } from 'primeng/api';
 
 @Component({
     selector: 'app-order-quote-step',
@@ -29,7 +31,8 @@ import { Dialog } from 'primeng/dialog';
         Button,
         Tag,
         Card,
-        Dialog
+        Dialog,
+        SplitButton
     ],
     templateUrl: './order-quote-step.component.html',
     styleUrl: './order-quote-step.component.css'
@@ -123,5 +126,39 @@ export class OrderQuoteStepComponent implements OnInit {
         if (list) {
             list.loadItems();
         }
+    }
+
+    discountItems: MenuItem[] = [
+        {
+            label: 'Sin Descuento (0%)',
+            icon: 'pi pi-times',
+            command: () => this.applyDiscount(0)
+        },
+        {
+            label: 'Descuento 5%',
+            icon: 'pi pi-percentage',
+            command: () => this.applyDiscount(5)
+        },
+        {
+            label: 'Descuento 10%',
+            icon: 'pi pi-percentage',
+            command: () => this.applyDiscount(10)
+        }
+    ];
+
+    applyDiscount(percent: number): void {
+        const currentQuote = this.quote();
+        if (!currentQuote) return;
+
+        this.quoteService.update(currentQuote.id, { discountPercent: percent }).subscribe({
+            next: (updatedQuote) => {
+                this.quote.set(updatedQuote);
+                const list = this.quoteItemsList();
+                if (list) {
+                    list.loadItems();
+                }
+            },
+            error: (err) => console.error('Error applying discount:', err)
+        });
     }
 }
