@@ -9,6 +9,7 @@ import { Product } from '../../../../shared/models/product.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductPickerComponent } from './components/product-picker/product-picker.component';
+import { SetPickerComponent } from './components/set-picker/set-picker.component';
 import { QuoteItemsListComponent } from './components/quote-items-list/quote-items-list.component';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
@@ -23,6 +24,7 @@ import { Dialog } from 'primeng/dialog';
         CommonModule,
         FormsModule,
         ProductPickerComponent,
+        SetPickerComponent,
         QuoteItemsListComponent,
         Button,
         Tag,
@@ -41,6 +43,7 @@ export class OrderQuoteStepComponent implements OnInit {
     selectedClient = signal<Client | null>(null);
     isOpenClientSearch = signal<boolean>(false);
     isOpenProductSearch = signal<boolean>(false);
+    isOpenSetSearch = signal<boolean>(false);
     products = signal<Product[]>([]);
     quote = signal<Quote | null>(null);
     isEditMode = signal(false);
@@ -81,6 +84,10 @@ export class OrderQuoteStepComponent implements OnInit {
         this.isOpenProductSearch.set(true);
     }
 
+    openSetSearch() {
+        this.isOpenSetSearch.set(true);
+    }
+
     onClientSelected(client: Client): void {
         this.selectedClient.set(client);
         this.isOpenClientSearch.set(false);
@@ -105,6 +112,13 @@ export class OrderQuoteStepComponent implements OnInit {
     }
 
     onProductAdded(): void {
+        const list = this.quoteItemsList();
+        if (list) {
+            list.loadItems();
+        }
+    }
+
+    onSetAdded(): void {
         const list = this.quoteItemsList();
         if (list) {
             list.loadItems();

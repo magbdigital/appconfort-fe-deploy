@@ -1,0 +1,55 @@
+<div class="product-list-container">
+    <div class="product-list-header">
+        <h1 class="page-title">Juegos de Muebles</h1>
+        <p-button label="Nuevo Juego" icon="pi pi-plus" (onClick)="abrirModal()" size="small"></p-button>
+    </div>
+
+    <!-- Loading / Error -->
+    @if (loading()) {
+        <p class="status-text">Cargando...</p>
+    }
+
+    @if (error()) {
+        <p class="status-text error-text">{{ error() }}</p>
+    }
+
+    <!-- Tabla -->
+    @if (!loading() && furnitureSets().length > 0) {
+        <p-table [value]="furnitureSets()" [responsiveLayout]="'scroll'">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>SKU</th>
+                    <th>Descripción</th>
+                    <th>Productos Incluidos</th>
+                    <th class="text-center">Estado</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-set>
+                <tr (click)="seleccionarJuego(set)" class="clickable-row">
+                    <td>{{ set.sku }}</td>
+                    <td>{{ set.description }}</td>
+                    <td>
+                        <div class="flex flex-column gap-1">
+                            @for (item of set.setItems; track item.id) {
+                                <div>• {{ item.product?.name || ('Producto ID: ' + item.productId) }}</div>
+                            }
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <p-tag [severity]="set.isActive ? 'success' : 'danger'" [value]="set.isActive ? 'Activo' : 'Inactivo'"></p-tag>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    }
+
+    <!-- Sin datos -->
+    @if (!loading() && furnitureSets().length === 0) {
+        <p class="status-text empty-text">No hay juegos de muebles registrados.</p>
+    }
+
+    <!-- Modal Formulario -->
+    @if (mostrarModal()) {
+        <app-furniture-set-form [setItem]="juegoSeleccionado()" (cerrar)="cerrarModal()" (guardado)="alGuardar()" />
+    }
+</div>

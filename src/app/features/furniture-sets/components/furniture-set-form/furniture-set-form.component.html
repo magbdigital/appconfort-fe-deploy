@@ -1,0 +1,107 @@
+<p-dialog 
+  [header]="esEdicion() ? 'Editar Juego de Muebles' : 'Crear Nuevo Juego de Muebles'" 
+  [visible]="visible()" 
+  (visibleChange)="onCerrar()"
+  [modal]="true" 
+  [style]="{ width: '700px' }" 
+  [draggable]="false" 
+  [resizable]="false"
+>
+  <div class="furniture-set-form-layout">
+    <!-- Descripción -->
+    <div class="field-group">
+      <label for="description">Descripción del Juego:</label>
+      <input 
+        pInputText 
+        id="description" 
+        [(ngModel)]="description" 
+        placeholder="Ej: Juego de Sala Venecia Premium" 
+        style="width: 100%;" 
+      />
+    </div>
+
+    <!-- Selector de Productos -->
+    <div class="field-group picker-group" style="position: relative; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+      <label for="productSearch">Buscar y Añadir Productos:</label>
+      <div class="search-input-wrapper">
+        <input 
+          pInputText 
+          id="productSearch" 
+          [(ngModel)]="searchText" 
+          (focus)="onSearchFocus()"
+          (blur)="onSearchBlur()"
+          placeholder="Escribe el nombre o SKU del producto..." 
+          style="width: 100%;" 
+          autocomplete="off"
+        />
+        <i class="pi pi-search search-icon"></i>
+      </div>
+
+      <!-- Sugerencias -->
+      @if (showSuggestions() && filteredProducts().length > 0) {
+        <div class="suggestions-dropdown">
+          @for (prod of filteredProducts(); track prod.id) {
+            <div class="suggestion-item" (mousedown)="selectProduct(prod)">
+              <div class="suggestion-info">
+                <span class="suggestion-name">{{ prod.name }}</span>
+                <span class="suggestion-sku">{{ prod.sku }}</span>
+              </div>
+              <span class="suggestion-price">${{ prod.finalPrice | number:'1.2-2' }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Tabla de Productos Añadidos -->
+    <div class="selected-products-section">
+      <h3 class="section-title">Productos Añadidos</h3>
+      
+      @if (selectedItems().length === 0) {
+        <p class="empty-items-text">No has añadido ningún producto a este juego todavía.</p>
+      } @else {
+        <p-table [value]="selectedItems()" styleClass="p-datatable-sm">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>SKU</th>
+              <th>Producto</th>
+              <th class="text-right">Precio Unit.</th>
+              <th class="text-center" style="width: 120px;">Cant.</th>
+              <th class="text-right">Subtotal</th>
+              <th class="text-center" style="width: 50px;"></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr>
+              <td>{{ item.product.sku }}</td>
+              <td>{{ item.product.name }}</td>
+              <td class="text-right">${{ item.product.finalPrice | number:'1.2-2' }}</td>
+              <td class="text-center">
+                <div class="quantity-controls">
+                  <p-button icon="pi pi-minus" [text]="true" [rounded]="true" severity="secondary" size="small" (onClick)="decrementQuantity(item.product.id)"></p-button>
+                  <span class="quantity-value">{{ item.quantity }}</span>
+                  <p-button icon="pi pi-plus" [text]="true" [rounded]="true" severity="secondary" size="small" (onClick)="incrementQuantity(item.product.id)"></p-button>
+                </div>
+              </td>
+              <td class="text-right font-semibold">${{ (item.product.finalPrice * item.quantity) | number:'1.2-2' }}</td>
+              <td class="text-center">
+                <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" size="small" (onClick)="removeItem(item.product.id)"></p-button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+
+        <div class="total-summary">
+          <span>Total del Juego:</span>
+          <span class="total-price">${{ getTotalPrice() | number:'1.2-2' }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="form-actions" style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="onCerrar()"></p-button>
+      <p-button label="Guardar Juego" [disabled]="selectedItems().length === 0" (onClick)="guardar()"></p-button>
+    </div>
+  </div>
+</p-dialog>

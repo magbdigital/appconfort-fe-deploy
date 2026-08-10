@@ -1,0 +1,52 @@
+<div class="product-picker-container">
+    <!-- Search input -->
+    <div class="search-input-wrapper">
+        <input pInputText type="text" [ngModel]="searchText()" (ngModelChange)="searchText.set($event)"
+            placeholder="Buscar juego de muebles..." />
+    </div>
+
+    <!-- Sets list -->
+    <div class="products-grid">
+        @for (set of filteredSets(); track set.id) {
+        <p-card styleClass="product-picker-card">
+            <!-- Thumbnail Placeholder / Icon -->
+            <div class="product-thumbnail">
+                <span class="placeholder-icon">📦</span>
+            </div>
+
+            <!-- Info -->
+            <div class="product-picker-info">
+                <p class="product-picker-name" [title]="set.description">{{ set.description || 'Juego sin descripción' }}</p>
+                <p class="product-picker-sku">SKU: {{ set.sku }}</p>
+                
+                <!-- Set Items list -->
+                <div class="set-items-preview" style="margin-top: 0.5rem; font-size: 0.775rem; color: #64748b;">
+                    <div style="font-weight: 600; margin-bottom: 0.25rem;">Contenido del juego:</div>
+                    @for (item of set.setItems; track item.id) {
+                        <div>• {{ item.product?.name }} (x{{ item.quantity }})</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Controls & Action -->
+            <div class="picker-controls-row">
+                <!-- Quantity picker -->
+                <div class="quantity-picker-box">
+                    <button (click)="decrement(set.id)" class="qty-btn">−</button>
+                    <span class="qty-display">{{ getQuantity(set.id) }}</span>
+                    <button (click)="increment(set.id)" class="qty-btn">+</button>
+                </div>
+
+                <!-- Add Button -->
+                <p-button icon="pi pi-plus" (onClick)="addSet(set)" size="small" [disabled]="!set.setItems || set.setItems.length === 0"></p-button>
+            </div>
+        </p-card>
+        }
+
+        @if (filteredSets().length === 0) {
+        <div class="empty-products-box">
+            <p>No se encontraron juegos de muebles disponibles.</p>
+        </div>
+        }
+    </div>
+</div>

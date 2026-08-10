@@ -2,7 +2,9 @@
     <!-- Products and Items List -->
     @if (quote()) {
     <div class="quote-builder-layout">
-        <div class="picker-panel" style="display: flex; justify-content: flex-end; width: 100%;">
+        <div class="picker-panel" style="display: flex; justify-content: flex-end; width: 100%; gap: 0.5rem;">
+            <p-button label="Seleccionar Juego" icon="pi pi-th-large" (onClick)="openSetSearch()"
+                size="small" [outlined]="true"></p-button>
             <p-button label="Seleccionar Productos" icon="pi pi-plus" (onClick)="openProductSearch()"
                 size="small"></p-button>
         </div>
@@ -34,6 +36,19 @@
         <ng-template pTemplate="footer">
             <p-button label="Cerrar" severity="secondary" [text]="true"
                 (onClick)="isOpenProductSearch.set(false)"></p-button>
+        </ng-template>
+    </p-dialog>
+
+    <!-- Dialog / Modal de Juegos -->
+    <p-dialog header="Seleccionar Juego de Muebles" [visible]="isOpenSetSearch()"
+        (visibleChange)="isOpenSetSearch.set($event)" [modal]="true" [style]="{ width: '850px' }"
+        [draggable]="false" [resizable]="false">
+        @if (quote()) {
+        <app-set-picker [quoteId]="quote()!.id" (setAdded)="onSetAdded()"></app-set-picker>
+        }
+        <ng-template pTemplate="footer">
+            <p-button label="Cerrar" severity="secondary" [text]="true"
+                (onClick)="isOpenSetSearch.set(false)"></p-button>
         </ng-template>
     </p-dialog>
 </div>

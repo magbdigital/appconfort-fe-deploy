@@ -1,0 +1,32 @@
+/* Reusing standard table styles */
+.product-list-container {
+    padding: 1.5rem;
+}
+
+.product-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.status-text {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-color-secondary);
+}
+
+.error-text {
+    color: var(--red-500);
+}
+
+.clickable-row {
+    cursor: pointer;
+}
