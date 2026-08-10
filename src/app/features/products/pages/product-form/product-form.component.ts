@@ -97,7 +97,9 @@ export class ProductFormComponent implements OnInit {
                 basePrice: this.producto.basePrice,
                 finalPrice: this.producto.finalPrice,
                 isActive: this.producto.isActive,
-                imageUrl: this.producto.imageUrl ? `${environment.apiUrl}${this.producto.imageUrl}` : undefined
+                imageUrl: this.producto.imageUrl 
+                    ? (this.producto.imageUrl.startsWith('http') ? this.producto.imageUrl : `${environment.apiUrl}${this.producto.imageUrl}`) 
+                    : undefined
             };
         }
     }

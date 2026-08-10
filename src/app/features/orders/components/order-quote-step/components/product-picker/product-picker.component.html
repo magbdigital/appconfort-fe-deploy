@@ -12,7 +12,7 @@
             <!-- Thumbnail -->
             <div class="product-thumbnail">
                 @if (product.imageUrl) {
-                <img [src]="apiUrl + product.imageUrl" alt="producto" />
+                <img [src]="getProductImageUrl(product.imageUrl)" alt="producto" />
                 } @else {
                 <span class="placeholder-icon">🛋️</span>
                 }

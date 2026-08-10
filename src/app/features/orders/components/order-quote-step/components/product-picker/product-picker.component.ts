@@ -74,4 +74,12 @@ export class ProductPickerComponent implements OnInit {
         const current = this.quantities[productId] ?? 1;
         if (current > 1) this.quantities[productId] = current - 1;
     }
+
+    getProductImageUrl(imageUrl?: string): string | undefined {
+        if (!imageUrl) return undefined;
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            return imageUrl;
+        }
+        return `${this.apiUrl}${imageUrl}`;
+    }
 }

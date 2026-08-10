@@ -18,6 +18,7 @@
         <p-table [value]="products()" [responsiveLayout]="'scroll'">
             <ng-template pTemplate="header">
                 <tr>
+                    <th style="width: 80px;">Foto</th>
                     <th>SKU</th>
                     <th>Nombre</th>
                     <th>Categoría</th>
@@ -27,6 +28,15 @@
             </ng-template>
             <ng-template pTemplate="body" let-product>
                 <tr (click)="seleccionarProducto(product)" class="clickable-row">
+                    <td>
+                        @if (product.imageUrl) {
+                            <img [src]="getProductImageUrl(product.imageUrl)" [alt]="product.name" class="product-thumbnail" />
+                        } @else {
+                            <div class="product-thumbnail-placeholder">
+                                <i class="pi pi-image"></i>
+                            </div>
+                        }
+                    </td>
                     <td>{{ product.sku }}</td>
                     <td>{{ product.name }}</td>
                     <td>{{ getCategoryLabel(product.category) }}</td>

@@ -6,6 +6,7 @@ import { ProductFormComponent } from '../product-form/product-form.component';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
     selector: 'app-product-list',
@@ -16,6 +17,8 @@ import { Tag } from 'primeng/tag';
 })
 export class ProductListComponent implements OnInit {
     private productService = inject(ProductService);
+    apiUrl = environment.apiUrl;
+
 
     products = signal<Product[]>([]);
     loading = signal(false);
@@ -72,5 +75,13 @@ export class ProductListComponent implements OnInit {
             'OTHER': 'Otro'
         };
         return labels[category] ?? category;
+    }
+
+    getProductImageUrl(imageUrl?: string): string | undefined {
+        if (!imageUrl) return undefined;
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            return imageUrl;
+        }
+        return `${this.apiUrl}${imageUrl}`;
     }
 }
