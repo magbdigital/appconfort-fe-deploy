@@ -15,12 +15,25 @@
 
     <!-- Tabla de Clientes con PrimeNG -->
     @if (!loading() && clients().length > 0) {
-        <p-table [value]="clients()" [responsiveLayout]="'scroll'">
+        <div class="search-filter-container" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+            <i class="pi pi-search" style="color: #64748b;"></i>
+            <input 
+                pInputText 
+                type="text" 
+                [ngModel]="searchText()" 
+                (ngModelChange)="searchText.set($event)" 
+                placeholder="Buscar por cliente o CI/RUC..." 
+                style="max-width: 320px; width: 100%;"
+            />
+        </div>
+
+        <p-table [value]="filteredClients()" [responsiveLayout]="'scroll'">
             <ng-template pTemplate="header">
                 <tr>
                     <th>CI/RUC</th>
                     <th>Nombre</th>
                     <th>Email</th>
+                    <th>Celular</th>
                     <th>Ciudad</th>
                 </tr>
             </ng-template>
@@ -29,6 +42,7 @@
                     <td>{{ client.nui }}</td>
                     <td>{{ client.firstName }} {{ client.lastName }}</td>
                     <td>{{ client.email }}</td>
+                    <td>{{ client.mobile || '-' }}</td>
                     <td>{{ client.city }}</td>
                 </tr>
             </ng-template>

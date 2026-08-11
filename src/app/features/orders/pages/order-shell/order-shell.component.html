@@ -9,10 +9,6 @@
         <span class="meta-divider">|</span>
         <span class="meta-item"><strong>Cliente:</strong> {{ selectedClient() ? (selectedClient()!.firstName + ' ' +
           selectedClient()!.lastName) : 'Sin Asignar' }}</span>
-        @if (selectedClient()) {
-        <span class="meta-divider">|</span>
-        <span class="meta-item"><strong>Mueble:</strong> {{ productName() }}</span>
-        }
       </div>
       @if (!selectedClient()) {
       <p-button label="Seleccionar Cliente" icon="pi pi-user-plus" (onClick)="openClientSearch()"

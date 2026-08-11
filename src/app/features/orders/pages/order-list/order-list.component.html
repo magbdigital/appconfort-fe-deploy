@@ -15,7 +15,19 @@
 
     <!-- Tabla -->
     @if (!loading() && quotes().length > 0) {
-        <p-table [value]="quotes()" [responsiveLayout]="'scroll'">
+        <div class="search-filter-container" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+            <i class="pi pi-search" style="color: #64748b;"></i>
+            <input 
+                pInputText 
+                type="text" 
+                [ngModel]="searchText()" 
+                (ngModelChange)="searchText.set($event)" 
+                placeholder="Buscar por cliente..." 
+                style="max-width: 320px; width: 100%;"
+            />
+        </div>
+
+        <p-table [value]="filteredQuotes()" [responsiveLayout]="'scroll'">
             <ng-template pTemplate="header">
                 <tr>
                     <th>Número</th>

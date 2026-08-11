@@ -27,6 +27,9 @@ export class ProductFormComponent implements OnInit {
     imagePreview = signal<string | null>(null);
     isUploadingImage = signal(false);
     esEdicion = signal(false);
+    errorMsg = signal<string | null>(null);
+    confirmarEliminar = signal(false);
+    private resetTimeout: any;
 
     categorias: ProductCategory[] = [
         'LIVING_ROOM', 'DINING_ROOM', 'BEDROOM', 'OFFICE', 'OUTDOOR', 'OTHER'
@@ -105,10 +108,13 @@ export class ProductFormComponent implements OnInit {
     }
 
     onCerrar(): void {
+        if (this.resetTimeout) clearTimeout(this.resetTimeout);
+        this.confirmarEliminar.set(false);
         this.cerrar.emit();
     }
 
     onGuardar(): void {
+        this.errorMsg.set(null);
         this.formData.taxRate = Number(this.formData.taxRate) || 0;
         this.formData.materialCost = Number(this.formData.materialCost) || 0;
         this.formData.laborCost = Number(this.formData.laborCost) || 0;
@@ -120,21 +126,48 @@ export class ProductFormComponent implements OnInit {
         if (this.esEdicion() && this.producto) {
             this.productService.update(this.producto.id, this.formData).subscribe({
                 next: () => this.guardado.emit(),
-                error: (err) => console.error('Error al actualizar:', err)
+                error: (err) => {
+                    console.error('Error al actualizar:', err);
+                    const backendMsg = err?.error?.message || err?.message || 'Error al actualizar el producto';
+                    this.errorMsg.set(backendMsg);
+                }
             });
         } else {
             this.productService.create(this.formData).subscribe({
                 next: () => this.guardado.emit(),
-                error: (err) => console.error('Error al crear:', err)
+                error: (err) => {
+                    console.error('Error al crear:', err);
+                    const backendMsg = err?.error?.message || err?.message || 'Error al crear el producto';
+                    this.errorMsg.set(backendMsg);
+                }
             });
         }
     }
 
     onEliminar(): void {
+        this.errorMsg.set(null);
+        if (!this.confirmarEliminar()) {
+            this.confirmarEliminar.set(true);
+
+            if (this.resetTimeout) clearTimeout(this.resetTimeout);
+            this.resetTimeout = setTimeout(() => {
+                this.confirmarEliminar.set(false);
+            }, 4000);
+
+            return;
+        }
+
+        if (this.resetTimeout) clearTimeout(this.resetTimeout);
+        this.confirmarEliminar.set(false);
+
         if (this.producto) {
             this.productService.delete(this.producto.id).subscribe({
                 next: () => this.guardado.emit(),
-                error: (err) => console.error('Error al eliminar:', err)
+                error: (err) => {
+                    console.error('Error al eliminar:', err);
+                    const backendMsg = err?.error?.message || err?.message || 'Error al eliminar el producto';
+                    this.errorMsg.set(backendMsg);
+                }
             });
         }
     }

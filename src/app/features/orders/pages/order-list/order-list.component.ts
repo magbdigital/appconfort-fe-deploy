@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { QuoteService } from '../../../../core/services/quote.service';
@@ -6,11 +6,13 @@ import { Quote } from '../../../../shared/models/quote.model';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
+import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
 
 @Component({
     selector: 'app-order-list',
     standalone: true,
-    imports: [CommonModule, TableModule, Button, Tag],
+    imports: [CommonModule, TableModule, Button, Tag, FormsModule, InputText],
     templateUrl: './order-list.component.html',
     styleUrl: './order-list.component.css'
 })
@@ -21,6 +23,18 @@ export class OrderListComponent implements OnInit {
     quotes = signal<Quote[]>([]);
     loading = signal(false);
     error = signal('');
+    searchText = signal('');
+
+    filteredQuotes = computed(() => {
+        const search = this.searchText().toLowerCase().trim();
+        if (!search) return this.quotes();
+        return this.quotes().filter(q => {
+            const firstName = q.client?.firstName?.toLowerCase() || '';
+            const lastName = q.client?.lastName?.toLowerCase() || '';
+            const fullName = `${firstName} ${lastName}`;
+            return fullName.includes(search);
+        });
+    });
 
     ngOnInit(): void {
         this.loadQuotes();

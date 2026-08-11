@@ -1,15 +1,17 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ClientService } from '../../../../core/services/client.service';
 import { Client } from '../../../../shared/models/client.model';
 import { CommonModule } from '@angular/common';
 import { ClientFormComponent } from '../client-form/client-form.component';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
+import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
 
 @Component({
     selector: 'app-client-list',
     standalone: true,
-    imports: [CommonModule, ClientFormComponent, TableModule, Button],
+    imports: [CommonModule, ClientFormComponent, TableModule, Button, FormsModule, InputText],
     templateUrl: './client-list.component.html',
     styleUrl: './client-list.component.css'
 })
@@ -20,6 +22,17 @@ export class ClientListComponent implements OnInit {
     error = '';
     mostrarModal = signal(false);
     clienteSeleccionado = signal<Client | null>(null);
+    searchText = signal('');
+
+    filteredClients = computed(() => {
+        const search = this.searchText().toLowerCase().trim();
+        if (!search) return this.clients();
+        return this.clients().filter(c => {
+            const fullName = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
+            const nui = (c.nui || '').toLowerCase();
+            return fullName.includes(search) || nui.includes(search);
+        });
+    });
 
     ngOnInit(): void {
         this.loadClients();

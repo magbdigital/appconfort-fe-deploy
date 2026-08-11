@@ -6,88 +6,147 @@
       <p class="dashboard-subtitle">Bienvenido de vuelta. Aquí está el resumen de la actividad de hoy.</p>
     </div>
     <div class="dashboard-actions-area">
-      <p-button label="Descargar Reporte" icon="pi pi-download" [outlined]="true" severity="secondary" size="small"></p-button>
-      <p-button label="Nueva Cotización" icon="pi pi-plus" size="small"></p-button>
+      <p-button label="Nueva Cotización" icon="pi pi-plus" size="small" (onClick)="goToNewQuote()"></p-button>
     </div>
   </div>
 
-  <!-- Stats Grid -->
-  <div class="stats-grid">
-    @for (stat of stats; track stat.title) {
+  @if (loading()) {
+    <div class="loading-state" style="padding: 5rem; text-align: center;">
+      <i class="pi pi-spin pi-spinner" style="font-size: 2.5rem; color: #3b82f6;"></i>
+      <p style="margin-top: 1rem; color: #64748b; font-weight: 500;">Cargando información del panel...</p>
+    </div>
+  } @else {
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <!-- Ventas Totales -->
       <p-card styleClass="dashboard-card">
         <div class="stat-card-content">
           <div class="stat-info">
-            <span class="stat-title">{{ stat.title }}</span>
-            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-title">Ventas Totales</span>
+            <span class="stat-value">{{ totalSales() | currency }}</span>
           </div>
-          <div class="stat-icon-wrapper" [class]="stat.color">
-            <i [class]="stat.icon"></i>
+          <div class="stat-icon-wrapper stat-blue">
+            <i class="pi pi-shopping-cart"></i>
           </div>
         </div>
         <div class="stat-footer">
-          <span [class]="stat.changeType === 'increase' ? 'change-increase' : 'change-decrease'" class="stat-change">
-            {{ stat.change.split(' ')[0] }}
-          </span>
-          <span class="stat-change-label">
-            {{ stat.change.substring(stat.change.indexOf(' ') + 1) }}
-          </span>
+          <span class="stat-change-label">Proformas Aceptadas</span>
         </div>
       </p-card>
-    }
-  </div>
 
-  <!-- Recent Orders & Activity Section -->
-  <div class="dashboard-content-layout">
-    <!-- Recent Orders Table -->
-    <div class="orders-section">
-      <p-card header="Cotizaciones Recientes" styleClass="dashboard-card full-height">
-        <p-table [value]="recentOrders" [responsiveLayout]="'scroll'" styleClass="p-datatable-sm">
-          <ng-template pTemplate="header">
-            <tr>
-              <th>ID</th>
-              <th>Cliente</th>
-              <th>Producto</th>
-              <th class="text-right">Monto</th>
-              <th class="text-center">Estado</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-order>
-            <tr class="table-row-hover">
-              <td class="order-id">{{ order.id }}</td>
-              <td>{{ order.client }}</td>
-              <td class="order-product">{{ order.product }}</td>
-              <td class="text-right font-semibold">${{ order.amount | number:'1.2-2' }}</td>
-              <td class="text-center">
-                <p-tag [severity]="getStatusSeverity(order.status)" [value]="order.status"></p-tag>
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
+      <!-- Saldos Pendientes -->
+      <p-card styleClass="dashboard-card">
+        <div class="stat-card-content">
+          <div class="stat-info">
+            <span class="stat-title">Saldos Pendientes</span>
+            <span class="stat-value" style="color: #ea580c;">{{ totalPendingBalance() | currency }}</span>
+          </div>
+          <div class="stat-icon-wrapper stat-orange">
+            <i class="pi pi-exclamation-circle"></i>
+          </div>
+        </div>
+        <div class="stat-footer">
+          <span class="stat-change-label">Liquidaciones pendientes</span>
+        </div>
+      </p-card>
+
+      <!-- Clientes Registrados -->
+      <p-card styleClass="dashboard-card">
+        <div class="stat-card-content">
+          <div class="stat-info">
+            <span class="stat-title">Clientes Registrados</span>
+            <span class="stat-value">{{ totalClients() }}</span>
+          </div>
+          <div class="stat-icon-wrapper stat-green">
+            <i class="pi pi-users"></i>
+          </div>
+        </div>
+        <div class="stat-footer">
+          <span class="stat-change-label">Clientes en base de datos</span>
+        </div>
+      </p-card>
+
+      <!-- Cotizaciones Activas -->
+      <p-card styleClass="dashboard-card">
+        <div class="stat-card-content">
+          <div class="stat-info">
+            <span class="stat-title">Cotizaciones Activas</span>
+            <span class="stat-value">{{ activeQuotesCount() }}</span>
+          </div>
+          <div class="stat-icon-wrapper stat-orange">
+            <i class="pi pi-file"></i>
+          </div>
+        </div>
+        <div class="stat-footer">
+          <span class="stat-change-label">Borradores y Enviadas</span>
+        </div>
+      </p-card>
+
+      <!-- Muebles en Catálogo -->
+      <p-card styleClass="dashboard-card">
+        <div class="stat-card-content">
+          <div class="stat-info">
+            <span class="stat-title">Productos Activos</span>
+            <span class="stat-value">{{ totalProducts() }}</span>
+          </div>
+          <div class="stat-icon-wrapper stat-purple">
+            <i class="pi pi-box"></i>
+          </div>
+        </div>
+        <div class="stat-footer">
+          <span class="stat-change-label">Disponibles en catálogo</span>
+        </div>
       </p-card>
     </div>
 
-    <!-- Quick Actions & Quick Note -->
-    <div class="widgets-section">
-      <p-card header="Acciones Rápidas" styleClass="dashboard-card">
-        <div class="quick-actions-list">
-          <p-button label="Crear Cliente" icon="pi pi-user-plus" [outlined]="true" styleClass="w-full"></p-button>
-          <p-button label="Ver Catálogo" icon="pi pi-images" [outlined]="true" severity="secondary" styleClass="w-full"></p-button>
-          <p-button label="Configuración" icon="pi pi-cog" [outlined]="true" severity="secondary" styleClass="w-full"></p-button>
-        </div>
-      </p-card>
+    <!-- Recent Orders & Activity Section -->
+    <div class="dashboard-content-layout">
+      <!-- Recent Orders Table -->
+      <div class="orders-section">
+        <p-card header="Cotizaciones Recientes" styleClass="dashboard-card full-height">
+          @if (recentQuotes().length > 0) {
+            <p-table [value]="recentQuotes()" [responsiveLayout]="'scroll'" styleClass="p-datatable-sm">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Número</th>
+                  <th>Cliente</th>
+                  <th class="text-right">Monto</th>
+                  <th class="text-center">Estado</th>
+                  <th style="width: 3.5rem;"></th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-quote>
+                <tr class="table-row-hover">
+                  <td class="order-id">#{{ quote.number }}</td>
+                  <td>{{ quote.client?.firstName }} {{ quote.client?.lastName }}</td>
+                  <td class="text-right font-semibold">{{ quote.total | currency }}</td>
+                  <td class="text-center">
+                    <p-tag [severity]="getStatusSeverity(quote.status)" [value]="getStatusLabel(quote.status)"></p-tag>
+                  </td>
+                  <td class="text-center">
+                    <p-button icon="pi pi-eye" [text]="true" [rounded]="true" size="small" (onClick)="goToQuote(quote.id)"></p-button>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          } @else {
+            <div style="padding: 2rem; text-align: center; color: #94a3b8;">
+              <i class="pi pi-inbox" style="font-size: 1.75rem; margin-bottom: 0.5rem; display: block;"></i>
+              <span>No hay cotizaciones registradas.</span>
+            </div>
+          }
+        </p-card>
+      </div>
 
-      <p-card header="Notas del Equipo" styleClass="dashboard-card flex-grow">
-        <div class="team-notes-list">
-          <div class="team-note-card note-amber">
-            <p class="note-title">Reunión de Diseño</p>
-            <p class="note-description">Hoy a las 4:00 PM. Revisión del catálogo de invierno.</p>
+      <!-- Quick Actions & Quick Note -->
+      <div class="widgets-section">
+        <p-card header="Acciones Rápidas" styleClass="dashboard-card">
+          <div class="quick-actions-list">
+            <p-button label="Crear Cliente" icon="pi pi-user-plus" [outlined]="true" styleClass="w-full" (onClick)="goToNewClient()"></p-button>
+            <p-button label="Ver Catálogo" icon="pi pi-images" [outlined]="true" severity="secondary" styleClass="w-full" (onClick)="goToCatalog()"></p-button>
           </div>
-          <div class="team-note-card note-blue">
-            <p class="note-title">Actualización del Sistema</p>
-            <p class="note-description">PrimeNG integrado correctamente en el panel administrativo.</p>
-          </div>
-        </div>
-      </p-card>
+        </p-card>
+      </div>
     </div>
-  </div>
+  }
 </div>

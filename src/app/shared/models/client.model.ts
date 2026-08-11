@@ -16,6 +16,10 @@ export interface CreateClientDto {
     firstName: string;
     lastName: string;
     email?: string;
+    mobile?: string;
+    address?: string;
+    city?: string;
+    notes?: string;
 }
 
 export type UpdateClientDto = Partial<Omit<CreateClientDto, 'nui'>>;

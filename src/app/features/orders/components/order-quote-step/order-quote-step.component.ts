@@ -53,6 +53,43 @@ export class OrderQuoteStepComponent implements OnInit {
 
     quoteItemsList = viewChild(QuoteItemsListComponent);
 
+    validityLabel = computed(() => {
+        const q = this.quote();
+        if (!q) return '';
+
+        let expiryDate: Date;
+        if (q.expiresAt) {
+            expiryDate = new Date(q.expiresAt);
+        } else if (q.issuedAt && q.validityDays) {
+            expiryDate = new Date(q.issuedAt);
+            expiryDate.setDate(expiryDate.getDate() + q.validityDays);
+        } else {
+            return '';
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const expiryReset = new Date(expiryDate);
+        expiryReset.setHours(0, 0, 0, 0);
+
+        const diffTime = expiryReset.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        const day = String(expiryDate.getDate()).padStart(2, '0');
+        const month = String(expiryDate.getMonth() + 1).padStart(2, '0');
+        const year = expiryDate.getFullYear();
+        const formattedDate = `${day}/${month}/${year}`;
+
+        if (diffDays < 0) {
+            return `Vencido el ${formattedDate} (hace ${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? 'día' : 'días'})`;
+        } else if (diffDays === 0) {
+            return `Vence hoy (${formattedDate})`;
+        } else {
+            return `Válido hasta ${formattedDate} (quedan ${diffDays} ${diffDays === 1 ? 'día' : 'días'})`;
+        }
+    });
+
     ngOnInit(): void {
         this.route.paramMap.subscribe(params => {
             const id = params.get('id');

@@ -24,12 +24,16 @@ export class ClientFormComponent implements OnInit {
 
   esEdicion = signal(false);
   visible = signal(true);
+  errorMsg = signal<string | null>(null);
+  confirmarEliminar = signal(false);
+  private resetTimeout: any;
 
   formData = {
     nui: '',
     firstName: '',
     lastName: '',
     email: '',
+    mobile: '',
   };
 
   ngOnInit(): void {
@@ -40,33 +44,64 @@ export class ClientFormComponent implements OnInit {
         firstName: this.cliente.firstName,
         lastName: this.cliente.lastName,
         email: this.cliente.email ?? '',
+        mobile: this.cliente.mobile ?? '',
       };
     }
   }
 
   onCerrar(): void {
+    if (this.resetTimeout) clearTimeout(this.resetTimeout);
+    this.confirmarEliminar.set(false);
     this.cerrar.emit();
   }
 
   onGuardar(): void {
+    this.errorMsg.set(null);
     if (this.esEdicion() && this.cliente) {
       this.clientService.update(this.cliente.id, this.formData).subscribe({
         next: () => this.guardado.emit(),
-        error: (err) => console.error('Error al actualizar:', err)
+        error: (err) => {
+          console.error('Error al actualizar:', err);
+          const backendMsg = err?.error?.message || err?.message || 'Error al actualizar el cliente';
+          this.errorMsg.set(backendMsg);
+        }
       });
     } else {
       this.clientService.create(this.formData).subscribe({
         next: () => this.guardado.emit(),
-        error: (err) => console.error('Error al crear:', err)
+        error: (err) => {
+          console.error('Error al crear:', err);
+          const backendMsg = err?.error?.message || err?.message || 'Error al crear el cliente';
+          this.errorMsg.set(backendMsg);
+        }
       });
     }
   }
 
   onEliminar(): void {
+    this.errorMsg.set(null);
+    if (!this.confirmarEliminar()) {
+      this.confirmarEliminar.set(true);
+      
+      if (this.resetTimeout) clearTimeout(this.resetTimeout);
+      this.resetTimeout = setTimeout(() => {
+        this.confirmarEliminar.set(false);
+      }, 4000);
+      
+      return;
+    }
+
+    if (this.resetTimeout) clearTimeout(this.resetTimeout);
+    this.confirmarEliminar.set(false);
+
     if (this.cliente) {
       this.clientService.delete(this.cliente.id).subscribe({
         next: () => this.guardado.emit(),
-        error: (err) => console.error('Error al eliminar:', err)
+        error: (err) => {
+          console.error('Error al eliminar:', err);
+          const backendMsg = err?.error?.message || err?.message || 'Error al eliminar el cliente';
+          this.errorMsg.set(backendMsg);
+        }
       });
     }
   }

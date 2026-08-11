@@ -2,7 +2,12 @@
     <!-- Products and Items List -->
     @if (quote()) {
     <div class="quote-builder-layout">
-        <div class="picker-panel" style="display: flex; justify-content: flex-end; width: 100%; gap: 0.5rem;">
+        <div class="picker-panel" style="display: flex; justify-content: flex-end; width: 100%; gap: 0.5rem; align-items: center;">
+            @if (validityLabel()) {
+                <span class="validity-label" style="margin-right: auto; font-size: 0.875rem; color: #64748b; display: flex; align-items: center; gap: 0.25rem;">
+                    <i class="pi pi-calendar-times" style="font-size: 0.95rem; color: #ef4444;"></i> {{ validityLabel() }}
+                </span>
+            }
             <p-splitButton label="Descuento ({{ quote()?.discountPercent || '0' }}%)" icon="pi pi-percentage" 
                 [model]="discountItems" size="small" severity="secondary" [outlined]="true"></p-splitButton>
             <p-button label="Seleccionar Juego" icon="pi pi-th-large" (onClick)="openSetSearch()"

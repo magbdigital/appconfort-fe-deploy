@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductService } from '../../../../core/services/product.service';
 import { Product } from '../../../../shared/models/product.model';
@@ -7,11 +7,13 @@ import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { environment } from '../../../../../environments/environment';
+import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
 
 @Component({
     selector: 'app-product-list',
     standalone: true,
-    imports: [CommonModule, ProductFormComponent, TableModule, Button, Tag],
+    imports: [CommonModule, ProductFormComponent, TableModule, Button, Tag, FormsModule, InputText],
     templateUrl: './product-list.component.html',
     styleUrl: './product-list.component.css'
 })
@@ -25,6 +27,16 @@ export class ProductListComponent implements OnInit {
     error = signal('');
     mostrarModal = signal(false);
     productoSeleccionado = signal<Product | null>(null);
+    searchText = signal('');
+
+    filteredProducts = computed(() => {
+        const search = this.searchText().toLowerCase().trim();
+        if (!search) return this.products();
+        return this.products().filter(p => 
+            p.name?.toLowerCase().includes(search) || 
+            p.sku?.toLowerCase().includes(search)
+        );
+    });
 
     ngOnInit(): void {
         this.loadProducts();

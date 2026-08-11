@@ -129,6 +129,13 @@ export class OrderShellComponent implements OnInit {
       }
     },
     {
+      label: 'Generar PDF',
+      icon: 'pi pi-file-pdf',
+      command: () => {
+        this.openPdfDirectly();
+      }
+    },
+    {
       label: 'No aprobada',
       icon: 'pi pi-thumbs-down',
       command: () => {
@@ -158,6 +165,13 @@ export class OrderShellComponent implements OnInit {
       icon: 'pi pi-plus',
       command: () => {
         this.liquidacionesComponent()?.isPaymentModalVisible.set(true);
+      }
+    },
+    {
+      label: 'Generar PDF de Pagos',
+      icon: 'pi pi-file-pdf',
+      command: () => {
+        this.generatePaymentsPdf();
       }
     }
   ];
@@ -459,7 +473,17 @@ export class OrderShellComponent implements OnInit {
             this.quoteStatus.set('SENT');
             this.quoteService.updateStatus(id, 'SENT').subscribe({
               next: () => {
-                const phone = client.mobile ? client.mobile.replace(/\D/g, '') : '593982753690';
+                let phone = client.mobile ? client.mobile.replace(/\D/g, '') : '';
+                if (phone) {
+                  if (phone.startsWith('0')) {
+                    phone = '593' + phone.substring(1);
+                  } else if (!phone.startsWith('593') && phone.length === 9) {
+                    phone = '593' + phone;
+                  }
+                } else {
+                  phone = '593982753690';
+                }
+
                 const message = encodeURIComponent(
                   `Hola ${client.firstName} ${client.lastName}, te compartimos la proforma de tu cotización por un valor total de USD ${finalTotal.toFixed(2)} (IVA incl.) en el siguiente enlace: ${pdfUrl}`
                 );
@@ -482,6 +506,200 @@ export class OrderShellComponent implements OnInit {
       },
       error: (err) => console.error('Error al obtener items para PDF:', err)
     });
+  }
+
+  openPdfDirectly(): void {
+    const id = this.quoteId();
+    const client = this.selectedClient();
+    if (!id || !client) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Error',
+        detail: 'Debe seleccionar un cliente y tener una cotización activa.'
+      });
+      return;
+    }
+
+    forkJoin({
+      quote: this.quoteService.getById(id),
+      items: this.quoteService.getItems(id)
+    }).subscribe({
+      next: ({ quote, items }) => {
+        if (!items || items.length === 0) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Sin items',
+            detail: 'La proforma debe tener al menos un producto para poder generar el PDF.'
+          });
+          return;
+        }
+
+        const discountPercent = parseFloat(quote.discountPercent || '0');
+        const pdfBlob = this.generateProformaPdf(id, client, items, discountPercent);
+        
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        window.open(blobUrl, '_blank');
+      },
+      error: (err) => {
+        console.error('Error al generar PDF directamente:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo generar el PDF de la proforma.'
+        });
+      }
+    });
+  }
+
+  generatePaymentsPdf(): void {
+    const component = this.liquidacionesComponent();
+    const salesOrder = component?.salesOrder();
+    const client = this.selectedClient();
+    
+    if (!salesOrder || !client) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Error',
+        detail: 'No hay información de liquidación o cliente seleccionada.'
+      });
+      return;
+    }
+
+    const payments = salesOrder.payments || [];
+    if (payments.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Sin pagos',
+        detail: 'No hay ningún pago registrado para generar el recibo.'
+      });
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(41, 128, 185);
+    doc.text('APP CONFORT', 20, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(127, 140, 141);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Soluciones de Confort y Muebles para tu hogar', 20, 26);
+    doc.text('Ecuador', 20, 31);
+
+    // Divider line
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 36, 190, 36);
+
+    // Document Details
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(44, 62, 80);
+    doc.text(`COMPROBANTE DE PAGOS - ORDEN #${salesOrder.number}`, 20, 46);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Fecha Emisión: ${new Date().toLocaleDateString()}`, 140, 46);
+
+    // Client Section
+    doc.setFont('helvetica', 'bold');
+    doc.text('CLIENTE:', 20, 58);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Nombre: ${client.firstName} ${client.lastName}`, 20, 64);
+    doc.text(`C.I. / NUI: ${client.nui}`, 20, 69);
+    if (client.mobile) {
+      doc.text(`Teléfono: ${client.mobile}`, 20, 74);
+    }
+
+    // Payments Header
+    doc.setFillColor(41, 128, 185);
+    doc.rect(20, 83, 170, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Método de Pago', 23, 88);
+    doc.text('Fecha / Hora', 85, 88);
+    doc.text('Monto', 165, 88);
+
+    // Payments Body
+    doc.setTextColor(44, 62, 80);
+    doc.setFont('helvetica', 'normal');
+    let yPos = 98;
+
+    const getPaymentMethodLabel = (method: string): string => {
+      switch (method) {
+        case 'CASH': return 'Efectivo';
+        case 'BANK_TRANSFER': return 'Transferencia Bancaria';
+        case 'CREDIT_CARD': return 'Tarjeta de Crédito';
+        case 'DEBIT_CARD': return 'Tarjeta de Débito';
+        case 'CHECK': return 'Cheque';
+        default: return method;
+      }
+    };
+
+    payments.forEach((payment: any) => {
+      const methodLabel = getPaymentMethodLabel(payment.paymentMethod);
+      const paymentDate = new Date(payment.createdAt).toLocaleString('es-EC', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const amountLabel = `$${Number(payment.amount).toFixed(2)}`;
+
+      doc.text(methodLabel, 23, yPos);
+      doc.text(paymentDate, 85, yPos);
+      doc.text(amountLabel, 165, yPos);
+
+      if (payment.notes) {
+        yPos += 5;
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8.5);
+        doc.setTextColor(127, 140, 141);
+        doc.text(`Notas: ${payment.notes}`, 23, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(44, 62, 80);
+      }
+
+      doc.setDrawColor(240, 240, 240);
+      doc.line(20, yPos + 3, 190, yPos + 3);
+      yPos += 10;
+    });
+
+    // Summary Totals
+    const totalPaid = payments.reduce((acc: number, p: any) => acc + parseFloat(p.amount), 0);
+    const quoteTotal = parseFloat(salesOrder.quoteTotal || '0');
+    const balance = quoteTotal - totalPaid;
+
+    yPos += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Proforma:', 110, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`USD ${quoteTotal.toFixed(2)}`, 165, yPos);
+
+    yPos += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(22, 163, 74);
+    doc.text('Total Pagado:', 110, yPos);
+    doc.text(`USD ${totalPaid.toFixed(2)}`, 165, yPos);
+
+    yPos += 7;
+    doc.setTextColor(220, 53, 69);
+    doc.text('Saldo Pendiente:', 110, yPos);
+    doc.text(`USD ${Math.max(0, balance).toFixed(2)}`, 165, yPos);
+
+    // Footer
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(180, 180, 180);
+    doc.text('Comprobante generado digitalmente.', 20, 275);
+
+    const blob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
   }
 }
 
